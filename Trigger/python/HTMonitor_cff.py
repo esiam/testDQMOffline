@@ -1,13 +1,3 @@
-
-Skip to content
-Pull requests
-Issues
-Marketplace
-Explore
-@esiam
-esiam /
-cmssw
-Public
 import FWCore.ParameterSet.Config as cms
 
 from DQMOffline.Trigger.HTMonitor_cfi import hltHTmonitoring
