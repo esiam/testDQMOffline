@@ -16,7 +16,6 @@ void METDQM::initialise(const edm::ParameterSet& iConfig) {
 }
 
 void METDQM::bookHistograms(DQMStore::IBooker& ibooker) {
-  //std::cout<<"Hallooo 22"<<std::endl;
   std::string histname, histtitle;
   
   histname = "met";
