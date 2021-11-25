@@ -16,21 +16,21 @@ hltFiltersDQM = hltFiltersDQMonitor.clone(
 # Lumi
 from DQMOffline.Trigger.DQMOffline_LumiMontiroring_cff import *
 
-# Egamma ---make comment ren
+# Egamma 
 from DQMOffline.Trigger.EgHLTOfflineSource_cff import *
 from DQMOffline.Trigger.EgammaMonitoring_cff import * # tag-n-probe (egammaMonitorHLT + egmHLTDQMSourceExtra)
 
-# Muon   ---make comment ren
+# Muon  
 from DQMOffline.Trigger.MuonOffline_Trigger_cff import *
 
-# Tau    ---make comment ren
+# Tau   
 from DQMOffline.Trigger.HLTTauDQMOffline_cff import *
 
 # JetMET
 from DQMOffline.Trigger.JetMETHLTOfflineAnalyzer_cff import *
 from DQMOffline.Trigger.JetMETPromptMonitor_cff import *
 
-# BTV       ---make comment ren
+# BTV      
 from DQMOffline.Trigger.BTVHLTOfflineSource_cfi import *
 from DQMOffline.Trigger.BTaggingMonitoring_cff import *
 
