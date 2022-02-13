@@ -42,6 +42,7 @@ private:
 
   const bool requireValidHLTPaths_;
   bool hltPathsAreValid_;
+  const bool enableFullMonitoring_;//=== added the flag==
 
   edm::InputTag metInputTag_;
   edm::InputTag jetInputTag_;
@@ -56,6 +57,7 @@ private:
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
 
   std::vector<double> met_variable_binning_;
+  std::vector<double> jetptBinning_; //==== added jetPt binning
   MEbinning met_binning_;
   MEbinning ls_binning_;
 
@@ -65,6 +67,19 @@ private:
   ObjME metPhiME_;
   ObjME deltaphimetj1ME_;
   ObjME deltaphij1j2ME_;
+  //========= added =========
+  ObjME metEtaME_;  
+  ObjME phij1ME_;
+  ObjME phij2ME_;
+  ObjME jetPhiME_;
+  ObjME etaj1ME_;
+  ObjME etaj2ME_; 
+  ObjME jetEtaME_; 
+  ObjME jetpt1ME_;
+  ObjME jetpt2ME_;
+  ObjME jetPtME_;   
+  ObjME nJetsME_; 
+  //=============================
 
   std::unique_ptr<GenericTriggerEventFlag> num_genTriggerEventFlag_;
   std::unique_ptr<GenericTriggerEventFlag> den_genTriggerEventFlag_;
@@ -81,6 +96,19 @@ private:
   static constexpr double MAX_PHI = 3.2;
   static constexpr int N_PHI = 64;
   static constexpr MEbinning phi_binning_{N_PHI, -MAX_PHI, MAX_PHI};
+  //============ added ===============
+  // Define Eta Bining
+  static constexpr double MAX_ETA = 3.0;
+  static constexpr int N_ETA = 30;
+  static constexpr MEbinning eta_binning{N_ETA, -MAX_ETA, MAX_ETA}; 
+  static constexpr MEbinning jet_eta_binning{50, -5, 5};  //eta binning for inclusive jet eta
+  //Define nJets Binning general selection Pt>0
+  static constexpr int MIN_NJETS = 0;
+  static constexpr int MAX_NJETS = 200;
+  static constexpr int N_BIN_NJETS = 200;
+  static constexpr MEbinning nJets_binning{N_BIN_NJETS, MIN_NJETS, MAX_NJETS};
+  
+  ///==============================
 
   std::vector<bool> warningPrinted4token_;
 };
@@ -89,6 +117,7 @@ METMonitor::METMonitor(const edm::ParameterSet& iConfig)
     : folderName_(iConfig.getParameter<std::string>("FolderName")),
       requireValidHLTPaths_(iConfig.getParameter<bool>("requireValidHLTPaths")),
       hltPathsAreValid_(false),
+      enableFullMonitoring_(iConfig.getParameter<bool>("enableFullMonitoring")), //===added=====
       metInputTag_(iConfig.getParameter<edm::InputTag>("met")),
       jetInputTag_(iConfig.getParameter<edm::InputTag>("jets")),
       eleInputTag_(iConfig.getParameter<edm::InputTag>("electrons")),
@@ -101,6 +130,8 @@ METMonitor::METMonitor(const edm::ParameterSet& iConfig)
       vtxToken_(mayConsume<reco::VertexCollection>(vtxInputTag_)),
       met_variable_binning_(
           iConfig.getParameter<edm::ParameterSet>("histoPSet").getParameter<std::vector<double> >("metBinning")),
+      jetptBinning_(
+          iConfig.getParameter<edm::ParameterSet>("histoPSet").getParameter<std::vector<double> >("jetptBinning")), //==== added (jet pt binning)
       met_binning_(getHistoPSet(
           iConfig.getParameter<edm::ParameterSet>("histoPSet").getParameter<edm::ParameterSet>("metPSet"))),
       ls_binning_(
@@ -195,6 +226,117 @@ void METMonitor::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& iRun
   histtitle = "PFMET phi";
   bookME(ibooker, metPhiME_, histname, histtitle, phi_binning_.nbins, phi_binning_.xmin, phi_binning_.xmax);
   setMETitle(metPhiME_, "PF MET #phi", "events / 0.1 rad");
+
+  //=================== added ================
+  histname = "metEta";
+  histtitle = "PFMET eta";
+  bookME(ibooker,
+     metEtaME_,
+     histname,
+     histtitle,
+     eta_binning.nbins,
+     eta_binning.xmin,
+     eta_binning.xmax);
+  setMETitle(metEtaME_, "PFMET #eta", "events");
+
+  histname = "jetEta";
+  histtitle = "Jet eta";
+  bookME(ibooker,
+     jetEtaME_,
+     histname,
+     histtitle,
+     jet_eta_binning.nbins,
+     jet_eta_binning.xmin,
+     jet_eta_binning.xmax);
+  setMETitle(jetEtaME_, "Jet #eta", "events");
+
+  histname = "jetPhi";
+  histtitle = "Jet phi";
+  bookME(ibooker,
+     jetPhiME_,
+     histname,
+     histtitle,
+     phi_binning_.nbins,
+     phi_binning_.xmin,
+     phi_binning_.xmax);
+  setMETitle(jetPhiME_, "Jet #phi", "events / 0.1 rad");
+
+  histname = "jetPt";
+  histtitle = "Jet Pt";
+  bookME(ibooker, jetPtME_, histname, histtitle, jetptBinning_);
+  setMETitle(jetPtME_, "jet Pt[GeV]", "events");
+           
+  histname = "NJets";
+  histtitle = "number of Jets";
+  bookME(ibooker,
+     nJetsME_,
+     histname,
+     histtitle,
+     nJets_binning.nbins,
+     nJets_binning.xmin,
+     nJets_binning.xmax);
+  setMETitle(nJetsME_, "number of Jets", "events"); 
+
+  //check the flag 
+  if (!enableFullMonitoring_) {
+        return;
+   }
+ 
+  histname = "jetEta1";
+  histtitle = "leading Jet eta";
+  bookME(ibooker,
+     etaj1ME_,
+     histname,
+     histtitle,
+     eta_binning.nbins,
+     eta_binning.xmin,
+     eta_binning.xmax);
+  setMETitle(etaj1ME_, "Jet_1 #eta", "events");
+
+      histname = "jetEta2";
+      histtitle = "subleading Jet eta";
+      bookME(ibooker,
+         etaj2ME_,
+         histname,
+         histtitle,
+         eta_binning.nbins,
+         eta_binning.xmin,
+         eta_binning.xmax);
+      setMETitle(etaj2ME_, "Jet_2 #eta", "events");
+   
+      histname = "jetPhi_1";
+      histtitle = "leading Jet phi";
+      bookME(ibooker,
+         phij1ME_,
+         histname,
+         histtitle,
+         phi_binning_.nbins,
+         phi_binning_.xmin,
+         phi_binning_.xmax);
+      setMETitle(phij1ME_, "Jet_1 #phi", "events / 0.1 rad");
+
+      histname = "jetPhi_2";
+      histtitle = "subleading Jet phi";
+      bookME(ibooker,
+         phij2ME_,
+         histname,
+         histtitle,
+         phi_binning_.nbins,
+         phi_binning_.xmin,
+         phi_binning_.xmax);
+      setMETitle(phij2ME_, "Jet_2 #phi", "events / 0.1 rad");  
+  
+      histname = "jetPt_1";
+      histtitle = "leading Jet Pt";
+      bookME(ibooker, jetpt1ME_, histname, histtitle, jetptBinning_);
+      setMETitle(jetpt1ME_, "Pt_1 [GeV]", "events");
+
+      histname = "jetPt_2";
+      histtitle = "second leading Jet Pt";
+      bookME(ibooker, jetpt2ME_, histname, histtitle, jetptBinning_);
+      setMETitle(jetpt2ME_, "Pt_2 [GeV]", "events");
+      //====================================================================== 
+
 }
 
 void METMonitor::analyze(edm::Event const& iEvent, edm::EventSetup const& iSetup) {
@@ -224,6 +366,7 @@ void METMonitor::analyze(edm::Event const& iEvent, edm::EventSetup const& iSetup
 
   float met = pfmet.pt();
   float phi = pfmet.phi();
+  float eta = pfmet.eta();
 
   std::vector<reco::PFJet> jets;
   edm::Handle<reco::PFJetCollection> jetHandle;
@@ -251,12 +394,36 @@ void METMonitor::analyze(edm::Event const& iEvent, edm::EventSetup const& iSetup
   }
   float deltaPhi_met_j1 = 10.0;
   float deltaPhi_j1_j2 = 10.0;
-
-  if (!jets.empty())
+  //========= added ===========
+  int nJets = jets.size();   
+  float Pt_J1 = 0.0;
+  float Pt_J2 = 0.0;
+  float Phi_J1 = 10.0;
+  float Phi_J2 = 10.0;
+  float Eta_J1 = 10.0;
+  float Eta_J2 = 10.0;  
+ 
+ //==========================
+  if (!jets.empty()){
     deltaPhi_met_j1 = fabs(deltaPhi(pfmet.phi(), jets[0].phi()));
-  if (jets.size() >= 2)
+    //====== added==============
+    if(enableFullMonitoring_){  //check the flag
+       Pt_J1  = jets[0].pt();
+       Phi_J1 = jets[0].phi();
+       Eta_J1 = jets[0].p4().eta(); 
+     } 
+    //======================= 
+   }     
+  if (jets.size() >= 2){
     deltaPhi_j1_j2 = fabs(deltaPhi(jets[0].phi(), jets[1].phi()));
-
+    //========= added =========
+    if(enableFullMonitoring_){  //check the flag
+       Pt_J2 = jets[1].pt();
+       Phi_J2 = jets[1].phi();
+       Eta_J2 = jets[1].p4().eta();  
+     }
+    //==================== 
+   }
   std::vector<reco::GsfElectron> electrons;
   edm::Handle<reco::GsfElectronCollection> eleHandle;
   iEvent.getByToken(eleToken_, eleHandle);
@@ -343,10 +510,33 @@ void METMonitor::analyze(edm::Event const& iEvent, edm::EventSetup const& iSetup
   metME_variableBinning_.denominator->Fill(met);
   metPhiME_.denominator->Fill(phi);
   deltaphimetj1ME_.denominator->Fill(deltaPhi_met_j1);
-  deltaphij1j2ME_.denominator->Fill(deltaPhi_j1_j2);
+  deltaphij1j2ME_.denominator->Fill(deltaPhi_j1_j2); 
 
   const int ls = iEvent.id().luminosityBlock();
   metVsLS_.denominator->Fill(ls, met);
+ 
+  //=========== added ============
+  metEtaME_.denominator->Fill(eta);
+  nJetsME_.denominator->Fill(nJets);
+  if (!jets.empty()){
+    for(int ii=0; ii<nJets; ii++){
+       jetPtME_.denominator->Fill(jets[ii].pt());
+       jetPhiME_.denominator->Fill(jets[ii].phi());
+       jetEtaME_.denominator->Fill(jets[ii].p4().eta());
+    }
+  }
+ if(enableFullMonitoring_){  //===check the flag
+      jetpt1ME_.denominator->Fill(Pt_J1);
+      jetpt2ME_.denominator->Fill(Pt_J2);       
+      phij1ME_.denominator->Fill(Phi_J1);
+      phij2ME_.denominator->Fill(Phi_J2);
+      etaj1ME_.denominator->Fill(Eta_J1);
+      etaj2ME_.denominator->Fill(Eta_J2);  
+   }
+  //========================= 
+ 
+
+  
   // applying selection for numerator
   if (num_genTriggerEventFlag_->on() && !num_genTriggerEventFlag_->accept(iEvent, iSetup))
     return;
@@ -358,12 +548,35 @@ void METMonitor::analyze(edm::Event const& iEvent, edm::EventSetup const& iSetup
   metVsLS_.numerator->Fill(ls, met);
   deltaphimetj1ME_.numerator->Fill(deltaPhi_met_j1);
   deltaphij1j2ME_.numerator->Fill(deltaPhi_j1_j2);
+
+   //============ added ===========
+   metEtaME_.numerator->Fill(eta); 
+   nJetsME_.numerator->Fill(nJets);    
+   if (!jets.empty()){
+     for(int kk=0; kk<nJets; kk++){
+       jetPtME_.numerator->Fill(jets[kk].pt());
+       jetPhiME_.numerator->Fill(jets[kk].phi());
+       jetEtaME_.numerator->Fill(jets[kk].p4().eta());
+     }
+    }
+   if(enableFullMonitoring_){  //===check the flag
+      jetpt1ME_.numerator->Fill(Pt_J1);
+      jetpt2ME_.numerator->Fill(Pt_J2);       
+      phij1ME_.numerator->Fill(Phi_J1);
+      phij2ME_.numerator->Fill(Phi_J2);
+      etaj1ME_.numerator->Fill(Eta_J1);
+      etaj2ME_.numerator->Fill(Eta_J2);       
+     }
+    //======================== 
 }
 
 void METMonitor::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<std::string>("FolderName", "HLT/MET");
   desc.add<bool>("requireValidHLTPaths", true);
+  //========== add a flag to enable more or less outputs in each trigger =====
+  desc.add<bool>("enableFullMonitoring", true);
+  //==============================================
 
   desc.add<edm::InputTag>("met", edm::InputTag("pfMet"));
   desc.add<edm::InputTag>("jets", edm::InputTag("ak4PFJetsCHS"));
@@ -402,6 +615,12 @@ void METMonitor::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
   std::vector<double> bins = {0.,   20.,  40.,  60.,  80.,  90.,  100., 110., 120., 130., 140., 150., 160.,
                               170., 180., 190., 200., 220., 240., 260., 280., 300., 350., 400., 450., 1000.};
   histoPSet.add<std::vector<double> >("metBinning", bins);
+  //======= added
+  std::vector<double> bins_ = {
+      0.,   20.,  40.,  60.,  80.,  90.,  100., 110., 120., 130., 140., 150., 160.,
+      170., 180., 190., 200., 220., 240., 260., 280., 300., 350., 400., 450., 1000.};  // Jet pT Binning
+  histoPSet.add<std::vector<double> >("jetptBinning", bins_);
+  //=======
 
   edm::ParameterSetDescription lsPSet;
   fillHistoLSPSetDescription(lsPSet);
